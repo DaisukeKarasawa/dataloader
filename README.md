@@ -1,6 +1,6 @@
 # GraphQL::Batch
 
-GraphQL に用意されているデータを一括取得するためのデータローダーを使用し、N+1 問題を回避する。
+GraphQL に用意されているデータを一括取得するためのデータローダー(GraphQL::Batch)を使用し、データアクセスにおける N+1 問題を回避することで。パフォーマンスを向上させ、データへ迅速なアクセスを可能にする。
 
 ## N+1 問題とは
 
@@ -13,7 +13,7 @@ GraphQL に用意されているデータを一括取得するためのデータ
 
 ## 実装例（[food-app](https://github.com/DaisukeKarasawa/food-app)）
 
-**GraphQL::Batch のインストール**
+### GraphQL::Batch のインストール
 
 ```
 # Gemfile
@@ -21,7 +21,7 @@ GraphQL に用意されているデータを一括取得するためのデータ
 gem "graphql-batch" # 追加
 ```
 
-**GraphQL::Batch の使用宣言**
+### GraphQL::Batch の使用宣言
 
 スキーマで GraphQL::Batch を使用することを宣言する。
 
@@ -37,7 +37,7 @@ class AdministrationFoodAppSchema < GraphQL::Schema
 end
 ```
 
-**サンプルコードを使用**
+### サンプルコードを使用
 
 アソシエーション用の[AssociationLoader クラスのサンプルコード](https://github.com/Shopify/graphql-batch/tree/master)を 'app/graphql/loaders/association_loader.rb' に記述する。
 
@@ -97,7 +97,7 @@ module Loaders
 end
 ```
 
-**AssociationLoader を使用する**
+### AssociationLoader を使用する
 
 AssociationLoader を使用するように変更する。
 
@@ -111,6 +111,7 @@ module Types
         field :foods, [Types::FoodType], null: true
         field :recipe_urls, [Types::RecipeUrlType], null: true
 
+        # 以下のコードを追加
         def recipe_urls
             Loaders::AssociationLoader.for(Dish, :recipe_urls).load(object)
         end
@@ -120,11 +121,10 @@ end
 
 ## 結果例(料理の一覧取得クエリ)
 
-**実装前**
+**- 実装前 -**
 
-料理のデータにはカレーと野菜炒めがあり、それぞれに紐づいている URL へアクセスするための同じ SELECT 文が 2 度も実行されている。
-
-料理のデータが増えれば増えるほど、このクエリが増えていくので、結果、パフォーマンスの低下や遅延が生じる可能性がある。
+料理のデータには'カレー'と'野菜炒め'があり、それぞれに紐づいている URL へアクセスするための同じ 'SELECT 文'が 2 度も実行されている。
+故に、料理のデータ量が増えれば増えるほど、URL 取得のクエリが増えていくので、結果、パフォーマンスの低下や遅延が生じる可能性がある。
 
 ```
 // ログ
@@ -135,9 +135,9 @@ SELECT "recipe_urls".* FROM "recipe_urls" WHERE "recipe_urls"."dish_id" = ?  [["
 SELECT "recipe_urls".* FROM "recipe_urls" WHERE "recipe_urls"."dish_id" = ?  [["dish_id", 2]]
 ```
 
-**実装後**
+**- 実装後 -**
 
-URL 取得クエリの一度の実行で、それぞれの料理の全ての URL を取得できるようになった。
+URL 取得クエリを一度の実行で、それぞれの料理の全ての URL を取得できるようになった。
 
 ```
 // ログ
